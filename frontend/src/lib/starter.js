@@ -6,6 +6,7 @@
 // schedule points at, so a weekday never depends on the position of a routine in the array.
 // Names stay canonical English — they become ordinary user routines, which are not translated.
 import { uid } from './format.js'
+import { DAVID_ROUTINES, DAVID_SCHEDULE } from './david-plan.js'
 
 const PPL = [
   ['push', 'Push Day', 'barbell', [['0025', 4, 8], ['0047', 3, 10], ['0426', 3, 10], ['0334', 3, 12], ['0241', 3, 12], ['0251', 3, 10]]],
@@ -35,6 +36,8 @@ const FIVE_BY_FIVE = [
 // [weekday, routineKey] — weekday is a DAYN index, so 1 is Monday. Fixed weeks only: every
 // plan repeats the same seven days, which is all the weekly plan model can represent.
 const PLANS = {
+  // Sheet calendar (Thu OFF, Sat Pull B) — not the Mon–Fri coach default.
+  'ppl-pp': { rich: true, routines: DAVID_ROUTINES, schedule: DAVID_SCHEDULE },
   ppl: { routines: PPL, schedule: [[1, 'push'], [3, 'pull'], [5, 'legs']] },
   'upper-lower': { routines: UPPER_LOWER, schedule: [[1, 'upper-a'], [2, 'lower-a'], [4, 'upper-b'], [5, 'lower-b']] },
   'full-body': { routines: FULL_BODY, schedule: [[1, 'fb-a'], [3, 'fb-b'], [5, 'fb-c']] },
@@ -43,6 +46,15 @@ const PLANS = {
 
 const build = routines =>
   routines.map(([, name, emoji, list]) => ({ id: uid(), name, emoji, ex: list.map(([id, sets, reps]) => ({ id, sets, reps, weight: 0 })) }))
+
+const buildRich = routines =>
+  routines.map(r => ({
+    id: uid(),
+    name: r.name,
+    emoji: r.emoji,
+    ...(r.prog ? { prog: r.prog } : {}),
+    ex: r.ex.map(e => ({ ...e })),
+  }))
 
 // Fresh routine objects (new ids) — [push, pull, legs]. The demo build seeds a history on
 // top of exactly these three, so this entry point keeps its shape.
@@ -61,8 +73,9 @@ export const starterPlanDays = id => PLANS[id]?.schedule.map(([day]) => day) ?? 
 export const buildStarterPlan = id => {
   const plan = PLANS[id]
   if (!plan) return null
-  const routines = build(plan.routines)
+  const routines = plan.rich ? buildRich(plan.routines) : build(plan.routines)
+  const keys = plan.rich ? plan.routines.map(r => r.key) : plan.routines.map(r => r[0])
   // key → the id just minted for it, so the schedule below names its routine
-  const byKey = Object.fromEntries(plan.routines.map(([key], i) => [key, routines[i].id]))
+  const byKey = Object.fromEntries(keys.map((key, i) => [key, routines[i].id]))
   return { routines, schedule: plan.schedule.map(([day, key]) => ({ day, routineId: byKey[key] })) }
 }
