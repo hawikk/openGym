@@ -1,2 +1,5 @@
 export * from './sheets-mod-a.jsx'
+export * from './sheets-mod-a2.jsx'
+export * from './sheets-mod-a3.jsx'
+export * from './sheets-mod-a4.jsx'
 export * from './sheets-mod-b.jsx'
